@@ -1,0 +1,534 @@
+<!-- ══ PAGE AUTH ══ -->
+<app-auth *ngIf="currentPage==='auth'"
+  [initialMode]="authMode"
+  (backToHome)="goToHome()">
+</app-auth>
+
+<!-- ══ PAGE PROFIL ══ -->
+<app-profile *ngIf="currentPage==='profile'"
+  [user]="currentUser"
+  (backToHome)="goToHome()"
+  (logout)="doLogout()">
+</app-profile>
+
+<!-- ══ PAGE PRINCIPALE ══ -->
+<ng-container *ngIf="currentPage==='home'">
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="nav-logo" (click)="goToHome()" style="cursor:pointer">
+    <div class="logo-badge">📋</div>
+    Stage<span class="dot">Book</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active">Rechercher</button>
+  </div>
+  <div class="nav-right">
+    <ng-container *ngIf="!currentUser">
+      <button class="btn-outline" (click)="goToLogin()">Connexion</button>
+      <button class="btn-primary" (click)="goToRegister()">S'inscrire</button>
+    </ng-container>
+    <ng-container *ngIf="currentUser">
+      <div class="avatar-menu">
+        <div class="avatar-nav" (click)="avatarOpen = !avatarOpen"
+             [title]="currentUser.prenom + ' ' + currentUser.nom">
+          {{getUserInitials()}}
+        </div>
+        <div class="avatar-dropdown" *ngIf="avatarOpen">
+          <div class="dropdown-header">
+            <strong>{{currentUser.prenom}} {{currentUser.nom}}</strong>
+            <span>{{currentUser.email}}</span>
+          </div>
+          <button class="dropdown-item" (click)="goToProfile()">👤 Mon profil</button>
+          <button class="dropdown-item" (click)="goToProfile()">📋 Mes candidatures</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" (click)="doLogout()">🚪 Déconnexion</button>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">🇹🇳 Plateforme de stages en Tunisie</div>
+    <h1 class="hero-title">
+      La plateforme qui connecte<br>
+      <em>étudiants</em> et <em>entreprises</em>
+    </h1>
+    <p class="hero-sub">
+      Trouvez le stage idéal ou le candidat parfait — tout en un seul endroit
+    </p>
+
+    <!-- 2 CARTES : Étudiant / Entreprise -->
+    <div class="hero-cards" *ngIf="!currentUser">
+      <div class="hero-card student-card" (click)="goToRegister()">
+        <div class="hc-icon">🎓</div>
+        <div class="hc-content">
+          <h3>Je suis étudiant</h3>
+          <p>Trouvez et postulez aux meilleures offres de stage</p>
+          <ul class="hc-list">
+            <li>✓ 1 240+ offres disponibles</li>
+            <li>✓ Postulez avec CV en 1 clic</li>
+            <li>✓ Suivez vos candidatures</li>
+          </ul>
+        </div>
+        <button class="hc-btn student-btn">Trouver un stage →</button>
+      </div>
+
+      <div class="hero-divider">
+        <span>ou</span>
+      </div>
+
+      <div class="hero-card company-card" (click)="goToRegister()">
+        <div class="hc-icon">🏢</div>
+        <div class="hc-content">
+          <h3>Je suis une entreprise</h3>
+          <p>Publiez vos offres et recevez les meilleures candidatures</p>
+          <ul class="hc-list">
+            <li>✓ Publiez gratuitement</li>
+            <li>✓ Recevez les CV directement</li>
+            <li>✓ Gérez vos candidatures</li>
+          </ul>
+        </div>
+        <button class="hc-btn company-btn">Publier une offre →</button>
+      </div>
+    </div>
+
+    <!-- Barre de recherche — seulement si connecté -->
+    <div class="search-box" *ngIf="currentUser">
+      <div class="search-field">
+        <span class="sf-icon">🔍</span>
+        <input [(ngModel)]="searchQuery" type="text"
+               placeholder="Intitulé du stage, domaine…" (keyup.enter)="doSearch()"/>
+      </div>
+      <div class="search-divider"></div>
+      <div class="search-field">
+        <span class="sf-icon">🏢</span>
+        <input [(ngModel)]="searchCompany" type="text"
+               placeholder="Société, secteur…" (keyup.enter)="doSearch()"/>
+      </div>
+      <div class="search-divider"></div>
+      <div class="search-field">
+        <span class="sf-icon">📍</span>
+        <input [(ngModel)]="searchCity" type="text"
+               placeholder="Ville, région…" (keyup.enter)="doSearch()"/>
+      </div>
+      <button class="search-btn" (click)="doSearch()">Rechercher →</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-val">{{allJobs.length > 0 ? allJobs.length + '+' : '1 240+'}}</div>
+        <div class="hero-stat-lbl">Offres actives</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">{{companies.length > 0 ? companies.length : '380+'}}</div>
+        <div class="hero-stat-lbl">Entreprises</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">12k+</div>
+        <div class="hero-stat-lbl">Étudiants inscrits</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-val">24</div>
+        <div class="hero-stat-lbl">Secteurs</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUICK FILTERS — seulement si connecté -->
+<div class="quick-filters" *ngIf="currentUser">
+  <span class="qf-label">Domaines :</span>
+  <div *ngFor="let chip of chips" class="qf-chip"
+       [class.on]="activeChip===chip" (click)="setChip(chip)">{{chip}}</div>
+</div>
+
+<!-- MAIN — seulement si connecté -->
+<div class="page-layout" *ngIf="currentUser">
+
+  <!-- FILTERS -->
+  <aside class="filters-panel">
+    <div class="fp-header">
+      <span class="fp-title">Filtres</span>
+      <button class="fp-reset" (click)="resetFilters()">Tout réinitialiser</button>
+    </div>
+    <div class="fp-section">
+      <div class="fp-section-title">Type de stage</div>
+      <div *ngFor="let f of typeFilters" class="filter-option" (click)="toggleFilter(f)">
+        <div class="fo-left"><div class="custom-cb" [class.checked]="f.checked"></div><span class="fo-label">{{f.label}}</span></div>
+        <span class="fo-count">{{f.count}}</span>
+      </div>
+    </div>
+    <div class="fp-section">
+      <div class="fp-section-title">Ville</div>
+      <div *ngFor="let f of cityFilters" class="filter-option" (click)="toggleFilter(f)">
+        <div class="fo-left"><div class="custom-cb" [class.checked]="f.checked"></div><span class="fo-label">{{f.label}}</span></div>
+        <span class="fo-count">{{f.count}}</span>
+      </div>
+    </div>
+    <div class="fp-section">
+      <div class="fp-section-title">Durée</div>
+      <div *ngFor="let f of durationFilters" class="filter-option" (click)="toggleFilter(f)">
+        <div class="fo-left"><div class="custom-cb" [class.checked]="f.checked"></div><span class="fo-label">{{f.label}}</span></div>
+      </div>
+    </div>
+    <div class="active-filters" *ngIf="jobs.length !== allJobs.length">
+      <div class="af-info"><span>{{jobs.length}} / {{allJobs.length}} offres</span></div>
+    </div>
+  </aside>
+
+  <!-- RÉSULTATS -->
+  <div>
+    <div class="section-title-row">
+      <h2 class="section-title">Entreprises qui recrutent</h2>
+      <button class="section-link" (click)="resetFilters()">Voir toutes →</button>
+    </div>
+
+    <div class="companies-grid" *ngIf="companies.length > 0">
+      <div *ngFor="let c of companies" class="company-card"
+           [class.company-active]="searchQuery === c.nom"
+           (click)="filterByEntreprise(c.nom)">
+        <div class="cc-logo">{{c.logo}}</div>
+        <div class="cc-name">{{c.nom}}</div>
+        <div class="cc-sector">{{c.secteur}}</div>
+        <div class="cc-offers">{{c.nombreOffres || 0}} offres</div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="connection-state loading-state">
+      <div class="spinner"></div>
+      <p>Connexion à Spring Boot...</p>
+      <span>Chargement des offres en cours</span>
+    </div>
+
+    <div *ngIf="errorConnection && !loading" class="connection-state error-state">
+      <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+      <p>Spring Boot n'est pas lancé</p>
+      <span>Lance <code>mvn spring-boot:run</code> dans le dossier stagebook-backend</span>
+      <button class="retry-btn" (click)="chargerOffres()">🔄 Réessayer</button>
+    </div>
+
+    <div *ngIf="!loading && !errorConnection">
+      <div class="section-title-row">
+        <h2 class="section-title">
+          Offres de stage <span class="results-sub">({{jobs.length}} résultats)</span>
+        </h2>
+        <div class="results-controls">
+          <select class="sort-select"><option>Plus récentes</option><option>Mieux payées</option></select>
+          <div class="view-toggle">
+            <button class="vt-btn on">☰</button>
+            <button class="vt-btn">⊞</button>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="jobs.length===0" class="empty-state">
+        <div style="font-size:48px;margin-bottom:12px">🔍</div>
+        <p style="font-size:16px;font-weight:600;color:#374151">Aucune offre trouvée</p>
+        <button style="margin-top:16px;padding:10px 20px;background:#2563eb;color:white;border:none;border-radius:9px;cursor:pointer;font-weight:600"
+                (click)="resetFilters()">Réinitialiser les filtres</button>
+      </div>
+
+      <div class="jobs-grid">
+        <div *ngFor="let job of jobs; let i=index"
+             class="job-card" [class.featured]="job.featured"
+             (click)="openJobModal(job)">
+          <div class="company-logo">{{job.logo}}</div>
+          <div class="job-main">
+            <div class="job-top">
+              <span class="job-title">{{job.titre}}</span>
+              <span *ngIf="job.featured" class="tag tag-featured">⭐ Mis en avant</span>
+              <span *ngIf="job.urgent"   class="tag tag-urgent">⚡ Urgent</span>
+            </div>
+            <div class="company-name">{{job.entreprise}}<span *ngIf="job.verifie" class="verified">✓</span></div>
+            <div class="job-meta">
+              <span class="meta-item"><span>📍</span> {{job.ville}}</span>
+              <span class="meta-item"><span>🕐</span> {{job.duree}} · {{job.typeStage}}</span>
+              <span class="meta-item"><span>🎓</span> {{job.niveau}}</span>
+              <span class="meta-item"><span>📅</span> {{job.dateDebut}}</span>
+            </div>
+            <div class="job-tags">
+              <span *ngFor="let s of parseJson(job.competences)" class="skill-tag">{{s}}</span>
+            </div>
+          </div>
+          <div class="job-right">
+            <span class="indemnite">{{job.salaire}}</span>
+            <button class="save-btn" [class.saved]="isSaved(i)" (click)="toggleSave(i,$event)">🔖</button>
+            <button class="apply-btn" (click)="ouvrirPostuler(job, $event)">Postuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pagination">
+        <button class="pg-btn arrow">‹</button>
+        <button *ngFor="let p of [1,2,3,4]" class="pg-btn"
+                [class.active]="activePage===p" (click)="setPage(p)">{{p}}</button>
+        <span class="pg-dots">…</span>
+        <button class="pg-btn arrow">›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL DÉTAIL OFFRE ══ -->
+<div class="modal-overlay" [class.open]="modalOpen"
+     (click)="closeModalOverlay($event)" *ngIf="selectedJob">
+  <div class="modal">
+    <div class="modal-hero">
+      <button class="modal-close" (click)="closeModal()">✕</button>
+      <div class="modal-co-logo">{{selectedJob.logo}}</div>
+      <div class="modal-co-name">{{selectedJob.entreprise}}</div>
+      <h2 class="modal-title">{{selectedJob.titre}}</h2>
+      <div class="modal-tags">
+        <span class="modal-tag">📍 {{selectedJob.ville}}</span>
+        <span class="modal-tag">🕐 {{selectedJob.duree}}</span>
+        <span class="modal-tag">{{selectedJob.typeStage}}</span>
+        <span class="modal-tag">{{selectedJob.salaire}}</span>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="modal-meta-grid">
+        <div class="mmg-item"><div class="mmg-label">Secteur</div><div class="mmg-val">{{selectedJob.secteur}}</div></div>
+        <div class="mmg-item"><div class="mmg-label">Niveau requis</div><div class="mmg-val">{{selectedJob.niveau}}</div></div>
+        <div class="mmg-item"><div class="mmg-label">Date de début</div><div class="mmg-val">{{selectedJob.dateDebut}}</div></div>
+        <div class="mmg-item"><div class="mmg-label">Candidatures</div><div class="mmg-val">{{selectedJob.nombreCandidatures}} postulants</div></div>
+      </div>
+      <div class="modal-section"><div class="modal-section-title">Description</div><p>{{selectedJob.description}}</p></div>
+      <div class="modal-section">
+        <div class="modal-section-title">Missions</div>
+        <ul class="mission-list"><li *ngFor="let m of parseJson(selectedJob.missions)">{{m}}</li></ul>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Compétences requises</div>
+        <div class="skills-wrap"><span *ngFor="let s of parseJson(selectedJob.competences)" class="skill-pill">{{s}}</span></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-full ghost" (click)="closeModal()">Fermer</button>
+      <button class="btn-full primary" (click)="postulDepuisModal()">
+        {{currentUser ? '📤 Postuler maintenant' : '🔒 Connectez-vous pour postuler'}}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL POSTULER ══ -->
+<div class="modal-overlay" [class.open]="postulModal" (click)="closePostulOverlay($event)">
+  <div class="postul-modal" *ngIf="postulOffre">
+
+    <!-- SUCCÈS -->
+    <div class="postul-success-screen" *ngIf="postulSuccess">
+      <div class="success-icon">🎉</div>
+      <h3>Candidature envoyée !</h3>
+      <p>Votre dossier a bien été transmis à <strong>{{postulOffre.entreprise}}</strong></p>
+      <p class="success-sub">Suivez l'état de votre candidature dans <strong>Mon Profil → Mes Candidatures</strong></p>
+      <button class="btn-success-close" (click)="postulModal=false; postulSuccess=false">
+        Fermer ✕
+      </button>
+    </div>
+
+    <!-- FORMULAIRE -->
+    <ng-container *ngIf="!postulSuccess">
+      <!-- Header -->
+      <div class="postul-header">
+        <div class="postul-logo">{{postulOffre.logo}}</div>
+        <div class="postul-info">
+          <div class="postul-company">{{postulOffre.entreprise}}</div>
+          <h3 class="postul-title">{{postulOffre.titre}}</h3>
+          <div class="postul-meta">
+            <span>📍 {{postulOffre.ville}}</span>
+            <span>🕐 {{postulOffre.duree}}</span>
+            <span>💰 {{postulOffre.salaire}}</span>
+          </div>
+        </div>
+        <button class="postul-close" (click)="postulModal=false">✕</button>
+      </div>
+
+      <!-- Étapes -->
+      <div class="postul-steps">
+        <div class="step" [class.active]="postulStep===1" [class.done]="postulStep>1">
+          <div class="step-num">{{postulStep>1 ? '✓' : '1'}}</div>
+          <span>Informations</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" [class.active]="postulStep===2" [class.done]="postulStep>2">
+          <div class="step-num">{{postulStep>2 ? '✓' : '2'}}</div>
+          <span>CV & Documents</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" [class.active]="postulStep===3">
+          <div class="step-num">3</div>
+          <span>Lettre & Envoi</span>
+        </div>
+      </div>
+
+      <div class="postul-body">
+
+        <!-- ÉTAPE 1 : Informations du candidat -->
+        <div *ngIf="postulStep===1" class="postul-step-content">
+          <h4 class="step-title">👤 Vos informations</h4>
+          <p class="step-sub">Vérifiez que vos informations sont correctes avant de postuler</p>
+
+          <div class="info-recap">
+            <div class="info-row">
+              <div class="ir-item">
+                <span class="ir-label">Nom complet</span>
+                <span class="ir-val">{{currentUser?.prenom}} {{currentUser?.nom}}</span>
+              </div>
+              <div class="ir-item">
+                <span class="ir-label">Email</span>
+                <span class="ir-val">{{currentUser?.email}}</span>
+              </div>
+              <div class="ir-item">
+                <span class="ir-label">Université</span>
+                <span class="ir-val">{{currentUser?.universite || '—'}}</span>
+              </div>
+              <div class="ir-item">
+                <span class="ir-label">Filière</span>
+                <span class="ir-val">{{currentUser?.filiere || '—'}}</span>
+              </div>
+              <div class="ir-item">
+                <span class="ir-label">Niveau</span>
+                <span class="ir-val">{{currentUser?.niveau || '—'}}</span>
+              </div>
+              <div class="ir-item">
+                <span class="ir-label">Téléphone</span>
+                <span class="ir-val">{{currentUser?.telephone || '—'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="info-incomplete" *ngIf="!currentUser?.universite || !currentUser?.filiere">
+            ⚠️ Votre profil est incomplet.
+            <button class="link-complete" (click)="postulModal=false; goToProfile()">
+              Compléter mon profil →
+            </button>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 2 : CV & Documents -->
+        <div *ngIf="postulStep===2" class="postul-step-content">
+          <h4 class="step-title">📎 CV & Documents</h4>
+          <p class="step-sub">Ajoutez votre CV (obligatoire) et d'autres documents optionnels</p>
+
+          <!-- Upload CV -->
+          <div class="upload-section">
+            <div class="upload-label">
+              Curriculum Vitae (CV) <span class="required">*</span>
+            </div>
+
+            <!-- Pas de CV uploadé -->
+            <div class="upload-zone" *ngIf="!cvFile && !cvFileName"
+                 (click)="cvInput.click()"
+                 (dragover)="$event.preventDefault()"
+                 (drop)="onCvDrop($event)">
+              <div class="uz-icon">📄</div>
+              <div class="uz-text">Glissez votre CV ici ou <span class="uz-link">parcourir</span></div>
+              <div class="uz-hint">PDF, DOC, DOCX — Max 5 MB</div>
+              <input #cvInput type="file" accept=".pdf,.doc,.docx" style="display:none"
+                     (change)="onCvSelect($event)"/>
+            </div>
+
+            <!-- CV uploadé -->
+            <div class="file-uploaded" *ngIf="cvFile || cvFileName">
+              <div class="fu-icon">✅</div>
+              <div class="fu-info">
+                <div class="fu-name">{{cvFileName}}</div>
+                <div class="fu-size">{{cvFileSize}}</div>
+              </div>
+              <button class="fu-remove" (click)="removeCV()">✕ Supprimer</button>
+            </div>
+
+            <div class="cv-error" *ngIf="cvError">⚠️ {{cvError}}</div>
+          </div>
+
+          <!-- Documents optionnels -->
+          <div class="upload-section" style="margin-top:20px">
+            <div class="upload-label">Lettre de recommandation (optionnel)</div>
+            <div class="upload-zone small" (click)="docInput.click()">
+              <div class="uz-icon" style="font-size:20px">📋</div>
+              <div class="uz-text" style="font-size:13px">
+                {{docFile ? docFile.name : 'Ajouter un document (optionnel)'}}
+              </div>
+              <input #docInput type="file" accept=".pdf,.doc,.docx" style="display:none"
+                     (change)="onDocSelect($event)"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- ÉTAPE 3 : Lettre de motivation -->
+        <div *ngIf="postulStep===3" class="postul-step-content">
+          <h4 class="step-title">✍️ Lettre de motivation</h4>
+          <p class="step-sub">Rédigez une lettre personnalisée pour augmenter vos chances</p>
+
+          <div class="alert-error" *ngIf="postulError">⚠️ {{postulError}}</div>
+
+          <div class="lettre-toolbar">
+            <button class="tb-btn" (click)="viderLettre()">🗑️ Vider la lettre</button>
+          </div>
+
+          <textarea [(ngModel)]="lettre" class="lettre-textarea" rows="12"
+            placeholder="Bonjour Madame, Monsieur,&#10;&#10;Je me permets de vous adresser ma candidature pour le poste de...">
+          </textarea>
+
+          <div class="lettre-footer">
+            <span class="lettre-count" [class.over]="lettre.length > 2000">
+              {{lettre.length}} / 2000 caractères
+            </span>
+            <span class="lettre-tip" *ngIf="lettre.length < 200">
+              💡 Une bonne lettre fait au moins 200 caractères
+            </span>
+          </div>
+
+          <!-- Résumé candidature -->
+          <div class="candidature-recap">
+            <div class="cr-title">📋 Récapitulatif de votre dossier</div>
+            <div class="cr-item">
+              <span>✅ Identité :</span>
+              <span>{{currentUser?.prenom}} {{currentUser?.nom}}</span>
+            </div>
+            <div class="cr-item">
+              <span>{{cvFile ? '✅' : '❌'}} CV :</span>
+              <span>{{cvFileName || 'Non ajouté'}}</span>
+            </div>
+            <div class="cr-item">
+              <span>{{lettre.length >= 100 ? '✅' : '⏳'}} Lettre :</span>
+              <span>{{lettre.length >= 100 ? lettre.length + ' caractères' : 'Trop courte'}}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer navigation -->
+      <div class="postul-footer">
+        <button class="btn-prev" *ngIf="postulStep > 1" (click)="postulStep = postulStep - 1">
+          ← Précédent
+        </button>
+        <button class="btn-cancel" *ngIf="postulStep === 1" (click)="postulModal=false">
+          Annuler
+        </button>
+
+        <button class="btn-next" *ngIf="postulStep < 3" (click)="nextStep()">
+          Suivant →
+        </button>
+
+        <button class="btn-send" *ngIf="postulStep === 3"
+                (click)="envoyerCandidature()"
+                [disabled]="postulLoading || !cvFile || lettre.length < 50">
+          <span *ngIf="!postulLoading">🚀 Envoyer ma candidature</span>
+          <span *ngIf="postulLoading">⏳ Envoi en cours...</span>
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" [class.show]="toastVisible">✅ <span>{{toastMsg}}</span></div>
+
+</ng-container>

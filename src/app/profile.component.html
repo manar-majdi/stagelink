@@ -1,0 +1,348 @@
+<div class="profile-page">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────────── -->
+  <aside class="profile-sidebar">
+    <button class="back-home-btn" (click)="goBack()">
+      ← Retour à l'accueil
+    </button>
+
+    <div class="profile-card">
+      <div class="profile-avatar">{{getUserInitials()}}</div>
+      <div class="profile-name">{{user?.prenom}} {{user?.nom}}</div>
+      <div class="profile-email">{{user?.email}}</div>
+      <div class="profile-badge" *ngIf="user?.niveau">
+        🎓 {{user?.niveau}}
+      </div>
+      <div class="profile-badge uni" *ngIf="user?.universite">
+        🏫 {{user?.universite}}
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="profile-stats">
+      <div class="pstat">
+        <div class="pstat-val">{{candidatures.length}}</div>
+        <div class="pstat-lbl">Candidatures</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-val">{{favoris.length}}</div>
+        <div class="pstat-lbl">Favoris</div>
+      </div>
+      <div class="pstat">
+        <div class="pstat-val">
+          {{candidatures.length > 0 ?
+            (candidatures | candidatureFilter:'ACCEPTEE').length : 0}}
+        </div>
+        <div class="pstat-lbl">Acceptées</div>
+      </div>
+    </div>
+
+    <!-- NAV -->
+    <nav class="profile-nav">
+      <button class="pnav-btn" [class.active]="activeTab === 'profil'"
+              (click)="setTab('profil')">
+        👤 Mon Profil
+      </button>
+      <button class="pnav-btn" [class.active]="activeTab === 'candidatures'"
+              (click)="setTab('candidatures')">
+        📋 Mes Candidatures
+        <span class="badge" *ngIf="candidatures.length > 0">{{candidatures.length}}</span>
+      </button>
+      <button class="pnav-btn" [class.active]="activeTab === 'favoris'"
+              (click)="setTab('favoris')">
+        🔖 Mes Favoris
+        <span class="badge" *ngIf="favoris.length > 0">{{favoris.length}}</span>
+      </button>
+    </nav>
+
+    <button class="logout-btn" (click)="onLogout()">
+      🚪 Déconnexion
+    </button>
+  </aside>
+
+  <!-- ── CONTENU PRINCIPAL ────────────────────────────────── -->
+  <main class="profile-main">
+
+    <!-- ══ TAB PROFIL ══ -->
+    <div *ngIf="activeTab === 'profil'">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Mon Profil</h2>
+          <p class="section-sub">Complétez votre profil pour augmenter vos chances</p>
+        </div>
+        <button class="btn-edit" (click)="startEdit()" *ngIf="!editMode">
+          ✏️ Modifier
+        </button>
+      </div>
+
+      <!-- Complétion du profil -->
+      <div class="completion-card">
+        <div class="completion-header">
+          <span>Complétion du profil</span>
+          <strong>{{getCompletion()}}%</strong>
+        </div>
+        <div class="completion-bar">
+          <div class="completion-fill" [style.width]="getCompletion() + '%'"></div>
+        </div>
+        <p class="completion-tip" *ngIf="getCompletion() < 100">
+          💡 Ajoutez {{getMissingFields()}} pour atteindre 100%
+        </p>
+      </div>
+
+      <!-- Formulaire profil -->
+      <div class="profile-form-card">
+
+        <!-- MODE LECTURE -->
+        <div *ngIf="!editMode" class="profile-view">
+          <div class="pv-section">
+            <h4 class="pv-section-title">Informations personnelles</h4>
+            <div class="pv-grid">
+              <div class="pv-item">
+                <span class="pv-label">Prénom</span>
+                <span class="pv-val">{{user?.prenom || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Nom</span>
+                <span class="pv-val">{{user?.nom || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Email</span>
+                <span class="pv-val">{{user?.email || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Téléphone</span>
+                <span class="pv-val">{{user?.telephone || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Ville</span>
+                <span class="pv-val">{{user?.ville || '—'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pv-section">
+            <h4 class="pv-section-title">Formation</h4>
+            <div class="pv-grid">
+              <div class="pv-item">
+                <span class="pv-label">Université</span>
+                <span class="pv-val">{{user?.universite || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Filière</span>
+                <span class="pv-val">{{user?.filiere || '—'}}</span>
+              </div>
+              <div class="pv-item">
+                <span class="pv-label">Niveau</span>
+                <span class="pv-val">{{user?.niveau || '—'}}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pv-section" *ngIf="user?.bio">
+            <h4 class="pv-section-title">À propos</h4>
+            <p class="pv-bio">{{user?.bio}}</p>
+          </div>
+        </div>
+
+        <!-- MODE ÉDITION -->
+        <form *ngIf="editMode" class="edit-form" (ngSubmit)="saveProfile()">
+          <h4 class="pv-section-title">Informations personnelles</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" [(ngModel)]="profileData.prenom" name="prenom" class="form-input"/>
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" [(ngModel)]="profileData.nom" name="nom" class="form-input"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Téléphone</label>
+              <input type="text" [(ngModel)]="profileData.telephone" name="telephone"
+                     class="form-input" placeholder="Ex: +216 XX XXX XXX"/>
+            </div>
+            <div class="form-group">
+              <label>Ville</label>
+              <input type="text" [(ngModel)]="profileData.ville" name="ville"
+                     class="form-input" placeholder="Ex: Tunis"/>
+            </div>
+          </div>
+
+          <h4 class="pv-section-title" style="margin-top:20px">Formation</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Université</label>
+              <input type="text" [(ngModel)]="profileData.universite" name="universite"
+                     class="form-input" placeholder="ESPRIT, FST, ENIT..."/>
+            </div>
+            <div class="form-group">
+              <label>Filière</label>
+              <input type="text" [(ngModel)]="profileData.filiere" name="filiere"
+                     class="form-input" placeholder="Informatique, Finance..."/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Niveau</label>
+            <select [(ngModel)]="profileData.niveau" name="niveau" class="form-input">
+              <option value="">Choisir...</option>
+              <option>Licence 1</option><option>Licence 2</option><option>Licence 3</option>
+              <option>Master 1</option><option>Master 2</option><option>Ingénieur</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>À propos de moi</label>
+            <textarea [(ngModel)]="profileData.bio" name="bio" class="form-input form-textarea"
+                      rows="4" placeholder="Décrivez-vous en quelques mots..."></textarea>
+          </div>
+
+          <div class="edit-actions">
+            <button type="button" class="btn-cancel" (click)="cancelEdit()">Annuler</button>
+            <button type="submit" class="btn-save" [disabled]="saving">
+              <span *ngIf="!saving">💾 Sauvegarder</span>
+              <span *ngIf="saving">⏳ Sauvegarde...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ══ TAB CANDIDATURES ══ -->
+    <div *ngIf="activeTab === 'candidatures'">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Mes Candidatures</h2>
+          <p class="section-sub">Suivez l'état de vos candidatures en temps réel</p>
+        </div>
+      </div>
+
+      <!-- Chargement -->
+      <div *ngIf="loadingCandidatures" class="loading-state">
+        <div class="spinner"></div>
+        <p>Chargement des candidatures...</p>
+      </div>
+
+      <!-- Vide -->
+      <div *ngIf="!loadingCandidatures && candidatures.length === 0" class="empty-state">
+        <div style="font-size:56px;margin-bottom:16px">📭</div>
+        <h3>Aucune candidature pour l'instant</h3>
+        <p>Parcourez les offres et postulez pour les voir apparaître ici</p>
+        <button class="btn-browse" (click)="goBack()">Voir les offres →</button>
+      </div>
+
+      <!-- Liste -->
+      <div class="candidatures-list" *ngIf="!loadingCandidatures && candidatures.length > 0">
+        <div *ngFor="let c of candidatures" class="candidature-card">
+          <div class="cc-logo">{{c.offre?.logo || '📋'}}</div>
+          <div class="cc-info">
+            <div class="cc-titre">{{c.offre?.titre || 'Offre'}}</div>
+            <div class="cc-entreprise">{{c.offre?.entreprise}} • {{c.offre?.ville}}</div>
+            <div class="cc-date">Postulé le {{formatDate(c.datePostulation)}}</div>
+          </div>
+          <div class="cc-statut">
+            <span class="statut-badge" [ngClass]="getStatutClass(c.statut)">
+              {{getStatutLabel(c.statut)}}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TAB FAVORIS ══ -->
+    <div *ngIf="activeTab === 'favoris'">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">Mes Favoris</h2>
+          <p class="section-sub">Les offres que vous avez sauvegardées</p>
+        </div>
+      </div>
+
+      <div *ngIf="favoris.length === 0" class="empty-state">
+        <div style="font-size:56px;margin-bottom:16px">🔖</div>
+        <h3>Aucun favori sauvegardé</h3>
+        <p>Cliquez sur 🔖 sur une offre pour la sauvegarder ici</p>
+        <button class="btn-browse" (click)="goBack()">Voir les offres →</button>
+      </div>
+
+      <div class="candidatures-list" *ngIf="favoris.length > 0">
+        <div *ngFor="let f of favoris; let i = index" class="candidature-card">
+          <div class="cc-logo">{{f.logo || '📋'}}</div>
+          <div class="cc-info">
+            <div class="cc-titre">{{f.titre}}</div>
+            <div class="cc-entreprise">{{f.entreprise}} • {{f.ville}}</div>
+            <div class="cc-date">{{f.duree}} • {{f.salaire}}</div>
+          </div>
+          <div class="cc-actions">
+            <button class="btn-postuler" (click)="ouvrirPostul(f)">Postuler</button>
+            <button class="btn-retirer" (click)="retirerFavori(i)">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══ MODAL POSTULER ══ -->
+<div class="modal-overlay" [class.open]="postulModal" (click)="$event.target === $event.currentTarget && fermerPostul()">
+  <div class="postul-modal" *ngIf="postulOffre">
+    <div class="postul-header">
+      <div class="postul-logo">{{postulOffre.logo || '📋'}}</div>
+      <div>
+        <div class="postul-company">{{postulOffre.entreprise}}</div>
+        <h3 class="postul-title">{{postulOffre.titre}}</h3>
+        <div class="postul-meta">📍 {{postulOffre.ville}} • 🕐 {{postulOffre.duree}}</div>
+      </div>
+      <button class="postul-close" (click)="fermerPostul()">✕</button>
+    </div>
+
+    <div class="postul-body" *ngIf="!postulSuccess">
+      <div class="alert-error" *ngIf="postulError">⚠️ {{postulError}}</div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Lettre de motivation <span style="color:#ef4444">*</span>
+        </label>
+        <textarea
+          [(ngModel)]="lettre"
+          class="form-input form-textarea"
+          rows="8"
+          placeholder="Bonjour,
+
+Je me permets de vous adresser ma candidature pour le poste de...
+
+Je suis étudiant(e) en {{user?.niveau}} à {{user?.universite || 'mon université'}}, spécialisé(e) en {{user?.filiere || 'ma filière'}}.
+
+Je suis particulièrement motivé(e) par ce stage car...
+
+Dans l'attente d'un retour de votre part,
+Cordialement,
+{{user?.prenom}} {{user?.nom}}">
+        </textarea>
+        <div class="lettre-count">{{lettre.length}} / 2000 caractères</div>
+      </div>
+
+      <div class="postul-footer">
+        <button class="btn-cancel" (click)="fermerPostul()">Annuler</button>
+        <button class="btn-send" (click)="postuler()" [disabled]="postulLoading || !lettre.trim()">
+          <span *ngIf="!postulLoading">🚀 Envoyer ma candidature</span>
+          <span *ngIf="postulLoading">⏳ Envoi en cours...</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="postul-success" *ngIf="postulSuccess">
+      <div style="font-size:64px">🎉</div>
+      <h3>Candidature envoyée !</h3>
+      <p>Votre candidature a été transmise à <strong>{{postulOffre.entreprise}}</strong></p>
+      <p style="color:#64748b;font-size:13px;margin-top:8px">
+        Vous pouvez suivre son statut dans l'onglet "Mes Candidatures"
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="profile-toast" [class.show]="toastVisible">✅ {{toastMsg}}</div>

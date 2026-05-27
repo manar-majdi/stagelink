@@ -1,0 +1,73 @@
+<div class="ent-page">
+
+  <!-- RETOUR -->
+  <button class="back-btn" (click)="backToHome.emit()">← Retour à l'accueil</button>
+
+  <!-- CHARGEMENT -->
+  <div *ngIf="loading" class="ent-loading">
+    <div class="spinner"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && entreprise">
+
+    <!-- HEADER ENTREPRISE -->
+    <div class="ent-header">
+      <div class="ent-logo">{{entreprise.logo}}</div>
+      <div class="ent-info">
+        <div class="ent-verified" *ngIf="entreprise.verifie">✓ Entreprise vérifiée</div>
+        <h1 class="ent-name">{{entreprise.nom}}</h1>
+        <div class="ent-meta">
+          <span>🏢 {{entreprise.secteur}}</span>
+          <span *ngIf="entreprise.ville">📍 {{entreprise.ville}}</span>
+          <span *ngIf="entreprise.siteWeb">
+            🌐 <a [href]="entreprise.siteWeb" target="_blank">{{entreprise.siteWeb}}</a>
+          </span>
+        </div>
+        <p class="ent-desc" *ngIf="entreprise.description">{{entreprise.description}}</p>
+      </div>
+      <div class="ent-stat">
+        <div class="es-val">{{offres.length}}</div>
+        <div class="es-lbl">Offres disponibles</div>
+      </div>
+    </div>
+
+    <!-- OFFRES -->
+    <div class="ent-offres-section">
+      <h2 class="ent-offres-title">Offres de stage chez {{entreprise.nom}}</h2>
+
+      <div *ngIf="offres.length === 0" class="ent-empty">
+        <div style="font-size:48px">📭</div>
+        <p>Aucune offre disponible pour le moment</p>
+      </div>
+
+      <div class="ent-offres-grid">
+        <div *ngFor="let offre of offres" class="ent-offre-card"
+             (click)="openOffer.emit(offre)">
+          <div class="eoc-top">
+            <div class="eoc-type">{{offre.typeStage}}</div>
+            <span *ngIf="offre.urgent" class="eoc-urgent">⚡ Urgent</span>
+          </div>
+          <h3 class="eoc-titre">{{offre.titre}}</h3>
+          <div class="eoc-meta">
+            <span>📍 {{offre.ville}}</span>
+            <span>🕐 {{offre.duree}}</span>
+            <span>🎓 {{offre.niveau}}</span>
+          </div>
+          <div class="eoc-skills">
+            <span *ngFor="let s of parseJson(offre.competences)" class="skill-chip">{{s}}</span>
+          </div>
+          <div class="eoc-footer">
+            <span class="eoc-salaire">{{offre.salaire}}</span>
+            <button class="eoc-btn" (click)="openOffer.emit(offre); $event.stopPropagation()">
+              Voir l'offre →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <div class="profile-toast" [class.show]="toastVisible">{{toastMsg}}</div>
+</div>
